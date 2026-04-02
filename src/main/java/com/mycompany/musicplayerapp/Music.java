@@ -15,13 +15,29 @@ public class Music {
     private File file;
     /** Unutk memuat nama music*/
     private String title;
+    private long totalFrames;
+    private int durationPerSeconds;
+    
     /**
      * Untuk mengkontruksi music object dari file yang di upload
      * @param mendapatkan alamat referensi dari file yang di upload
      */
     public Music(File file){
         this.file = file;
-        this.title = file.getName().replace(".mp3", "");
+        this.title = parseTitle(file.getName());
+        
+        this.totalFrames = 0;
+        this.durationPerSeconds = 0;
+    }
+    /**
+     * Untuk menghapus ekstensi ".mp3" agar UI terlihat bersih 
+     * @return fileName
+     */
+    private String parseTitle(String fileName){
+        if (fileName.toLowerCase().endsWith(".mp3")){
+            return fileName.substring(0, fileName.length() - 4);
+        }
+        return fileName;
     }
     /**
      * mengembalikan alamat dari music ini

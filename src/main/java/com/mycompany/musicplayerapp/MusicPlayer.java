@@ -5,8 +5,10 @@
 package com.mycompany.musicplayerapp;
 
 import java.io.File;
+import java.io.FileInputStream;
 import javax.sound.sampled.*;
 import java.io.IOException;
+import javazoom.jl.player.advanced.AdvancedPlayer;
 
 /**
  *
@@ -14,6 +16,8 @@ import java.io.IOException;
  */
 public class MusicPlayer {
 
+    private AdvancedPlayer player;
+    private Thread playThread;
     /* Audio file yang sedang dimuat sekarang */
     private Clip clip;
     /* Musik yang sedang di mainkan sekarang */
@@ -21,143 +25,123 @@ public class MusicPlayer {
     /* Mentracking apakah music yang dijalankan sedang 
     di pause atau masih berjalan */
     private boolean isPaused;
+    private boolean isPlaying;
     /* Menyimpan posisi frame jika musik sedang di pause, sehingga
     bisa di jalankan kembali*/
-    private int pausePosition;
+    private int currentFrame;
+    private final int ASSUMED_FRAME_RATE = 26;
 
     public MusicPlayer() {
-        this.clip = null;
-        this.currentMusic = null;
         this.isPaused = false;
-        this.pausePosition = 0;
+        this.currentFrame = 0;
     }
 
     public void load(Music music) {
         stop();
-        try {
-            File file = music.getFile();
-            AudioInputStream originalStream = AudioSystem.getAudioInputStream(file);
-            AudioFormat originalFormat = originalStream.getFormat();
-
-            AudioFormat decodedFormat = new AudioFormat(
-                    AudioFormat.Encoding.PCM_SIGNED,
-                    originalFormat.getSampleRate(),
-                    16,
-                    originalFormat.getChannels(),
-                    originalFormat.getChannels() * 2,
-                    originalFormat.getSampleRate(),
-                    false
-            );
-
-            AudioInputStream decodedStream = AudioSystem.getAudioInputStream(decodedFormat, originalStream);
-            clip = AudioSystem.getClip();
-            clip.open(decodedStream);
-            currentMusic = music;
-            isPaused = false;
-            pausePosition = 0;
-
-        } catch (UnsupportedAudioFileException e) {
-            System.err.println("Format not supported: " + e.getMessage());
-        } catch (IOException e) {
-            System.err.println("Error reading file: " + e.getMessage());
-        } catch (LineUnavailableException e) {
-            System.err.println("Audio line unavailable: " + e.getMessage());
-        }
+        this.currentMusic = music;
+        this.currentFrame = 0;
     }
-    
-    /**
-     * Memulai music yang sedang dimuat
-     * Jika di pause maka, mulai pada posisi pause sebelumnya
-     * Jika tidak, mulai dari awal 
-     */
 
-    public void Play() {
-        if (clip == null) {
+    /**
+     * Memulai music yang sedang dimuat Jika di pause maka, mulai pada posisi
+     * pause sebelumnya Jika tidak, mulai dari awal
+     */
+    public void play() {
+        if (currentMusic == null || isPlaying) {
             return;
         }
-        if (isPaused) {
-            clip.setFramePosition(pausePosition);
-            clip.start();
+
+        try {
+            FileInputStream fis = new FileInputStream(currentMusic.getFile());
+            player = new AdvancedPlayer(fis);
+
+            isPlaying = true;
             isPaused = false;
-        } else {
-            clip.setFramePosition(0);
-            clip.start();
+
+            // Run playback in a separate thread to keep GUI responsive
+            playThread = new Thread(() -> {
+                try {
+                    // Play starting from the saved frame
+                    player.play(currentFrame, Integer.MAX_VALUE);
+
+                    // If it finishes naturally (not paused/stopped)
+                    if (player != null && !isPaused) {
+                        stop();
+                    }
+                } catch (Exception e) {
+                    System.out.println("Playback error: " + e.getMessage());
+                }
+            });
+
+            playThread.start();
+
+        } catch (Exception e) {
+            System.out.println("Failed to load file: " + e.getMessage());
         }
     }
 
-    
     /**
-     * Untuk memberhentikan music sementara music
-     * Menyimpan posisi frame sekarang saat di berhentikan sementara
+     * Untuk memberhentikan music sementara music Menyimpan posisi frame
+     * sekarang saat di berhentikan sementara
      */
     public void pause() {
-        if (clip != null && clip.isRunning()) {
-            pausePosition = clip.getFramePosition();
-            clip.stop();
+        if (player != null && isPlaying) {
             isPaused = true;
+            isPlaying = false;
+            player.close();
         }
     }
+
     /**
-     * Untuk menskip perframe music.
-     * Jika frame terskip sampai akhir maka music berhenti sementara
+     * Untuk menskip perframe music. Jika frame terskip sampai akhir maka music
+     * berhenti sementara
      */
     public void forward(int seconds) {
-        if (clip == null) {
-            return;
-        }
-
-        int frameRate = (int) clip.getFormat().getFrameRate();
-        int currentFrame = clip.getFramePosition();
-        int newFrame = currentFrame + (frameRate * seconds);
-
-        if (newFrame >= clip.getFrameLength()) {
-            newFrame = clip.getFrameLength() - 1;
-        }
-
-        boolean wasRunning = clip.isRunning();
-        clip.stop();
-        clip.setFramePosition(newFrame);
-        if (wasRunning) {
-            clip.start();
+        if (currentMusic != null) {
+            int framesToSkip = seconds * ASSUMED_FRAME_RATE;
+            seek(currentFrame + framesToSkip);
         }
     }
+
     /**
      * Untuk memberhentikan music yang sedang berjalan
      */
     public void stop() {
-        if (clip != null) {
-            clip.stop();
-            clip.close();
-            clip = null;
+        if (player != null) {
+            isPlaying = false;
             isPaused = false;
-            pausePosition = 0;
+            currentFrame = 0;
+            player.close();
+            player = null;
+        }
+    }
+
+    public void seek(int targetFrame) {
+        boolean wasPlaying = isPlaying;
+        // Memberhentikan streamline sementara
+        if (player != null) {
+            player.close();
+        }
+        // Update posisi timeline
+        this.currentFrame = targetFrame;
+        this.isPlaying = false;
+
+        if (wasPlaying) {
+            play();
         }
     }
 
     /**
-     * Skip frame ke belakang. mengkalkulasi frame sekarang
-     * jika skip sampai posisi start maka frame kembali ke 0
+     * Skip frame ke belakang. mengkalkulasi frame sekarang jika skip sampai
+     * posisi start maka frame kembali ke 0
      *
      * @param seconds bilangan number untuk menskip music
      */
     public void backward(int seconds) {
-        if (clip == null) {
-            return;
-        }
-
-        int frameRate = (int) clip.getFormat().getFrameRate();
-        int currentFrame = clip.getFramePosition();
-        int newFrame = currentFrame - (frameRate * seconds);
-
-        if (newFrame < 0) {
-            newFrame = 0;
-        }
-
-        boolean wasRunning = clip.isRunning();
-        clip.stop();
-        clip.setFramePosition(newFrame);
-        if (wasRunning) {
-            clip.start();
+        if (currentMusic != null) {
+            int framesToSkip = seconds * ASSUMED_FRAME_RATE;
+            int newFrame = currentFrame - framesToSkip;
+            seek(Math.max(0, newFrame));
         }
     }
 
@@ -167,40 +151,19 @@ public class MusicPlayer {
      * @return benar jika music masih berjalan, selain itu false
      */
     public boolean isPlaying() {
-        return clip != null && clip.isRunning();
+        return isPlaying;
     }
 
     /**
-     * Returns the currently loaded music object.
+     * Mengembalikan object music yang dijalankan.
      *
      * @return Music yang sedang mulai sekarang, atau null
      */
     public Music getCurrentMusic() {
         return currentMusic;
     }
-
-    /**
-     * Mengembalikan posisi playback sekarang.
-     *
-     * @return posisi sekarang
-     */
-    public long getCurrentSeconds() {
-        if (clip == null) {
-            return 0;
-        }
-        return clip.getMicrosecondPosition() / 1_000_000;
+    // Mengambil posisi frame sekarang
+    public int getCurrentFrame() {
+        return currentFrame;
     }
-
-    /**
-     * Mengembalikan durasi music yang berjalan.
-     *
-     * @return total durasi music
-     */
-    public long getTotalSeconds() {
-        if (clip == null) {
-            return 0;
-        }
-        return clip.getMicrosecondLength() / 1_000_000;
-    }
-
 }

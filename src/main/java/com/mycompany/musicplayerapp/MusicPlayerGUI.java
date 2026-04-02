@@ -9,6 +9,8 @@ import javax.swing.*;
 import java.awt.*;
 import java.io.File;
 import java.util.ArrayList;
+import javax.swing.event.ChangeEvent;
+import javax.swing.event.ChangeListener;
 
 /**
  *
@@ -43,6 +45,18 @@ public class MusicPlayerGUI extends JFrame {
     private JMenu playMusicMenu;
 
     /**
+     * Slider untuk menampilkan progres lagu dan memungkinkan pengguna untuk
+     * menggeser (seek) posisi lagu
+     */
+    private JSlider timeSlider;
+
+    /**
+     * Timer Swing untuk memperbarui posisi slider secara otomatis agar sinkron
+     * dengan GUI (thread-safe)
+     */
+    private Timer progressTimer;
+
+    /**
      * Konstruktor untuk GUI Pemutar Musik. Menginisialisasi semua komponen,
      * menu, dan listener tombol.
      */
@@ -50,8 +64,8 @@ public class MusicPlayerGUI extends JFrame {
         musicList = new ArrayList<>();
         player = new MusicPlayer();
 
-        setTitle("🎵 Simple Music Player");
-        setSize(500, 300);
+        setTitle("🎵 Pemutar Musik Sederhana");
+        setSize(500, 350); // Sedikit diperbesar untuk mengakomodasi timeline bar
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLocationRelativeTo(null);
         setLayout(new BorderLayout());
@@ -72,7 +86,7 @@ public class MusicPlayerGUI extends JFrame {
 
         // === Menu File ===
         JMenu fileMenu = new JMenu("File");
-        JMenuItem uploadItem = new JMenuItem("Upload MP3");
+        JMenuItem uploadItem = new JMenuItem("Unggah MP3");
 
         /**
          * Action listener untuk mengunggah file MP3. Membuka JFileChooser,
@@ -84,7 +98,7 @@ public class MusicPlayerGUI extends JFrame {
             public void actionPerformed(ActionEvent e) {
                 JFileChooser chooser = new JFileChooser();
                 chooser.setFileFilter(new javax.swing.filechooser.FileNameExtensionFilter(
-                        "MP3 Files", "mp3"));
+                        "File MP3", "mp3"));
                 int result = chooser.showOpenDialog(MusicPlayerGUI.this);
 
                 if (result == JFileChooser.APPROVE_OPTION) {
@@ -93,7 +107,7 @@ public class MusicPlayerGUI extends JFrame {
                     musicList.add(music);
                     refreshPlayMusicMenu();
                     JOptionPane.showMessageDialog(MusicPlayerGUI.this,
-                            "Uploaded: " + music.getTitle());
+                            "Berhasil Diunggah: " + music.getTitle());
                 }
             }
         });
@@ -101,8 +115,8 @@ public class MusicPlayerGUI extends JFrame {
         fileMenu.add(uploadItem);
         menuBar.add(fileMenu);
 
-        // === Menu Pemutaran Music ===
-        playMusicMenu = new JMenu("Play Music");
+        // === Menu Putar Musik ===
+        playMusicMenu = new JMenu("Putar Musik");
         menuBar.add(playMusicMenu);
 
         setJMenuBar(menuBar);
@@ -117,13 +131,12 @@ public class MusicPlayerGUI extends JFrame {
         playMusicMenu.removeAll();
 
         if (musicList.isEmpty()) {
-            JMenuItem emptyItem = new JMenuItem("No music uploaded");
+            JMenuItem emptyItem = new JMenuItem("Belum ada musik diunggah");
             emptyItem.setEnabled(false);
             playMusicMenu.add(emptyItem);
             return;
         }
 
-        // Create a panel with grid layout for the dropdown
         int cols = 2;
         int rows = (int) Math.ceil((double) musicList.size() / cols);
         JPanel gridPanel = new JPanel(new GridLayout(rows, cols, 5, 5));
@@ -141,17 +154,21 @@ public class MusicPlayerGUI extends JFrame {
                 @Override
                 public void actionPerformed(ActionEvent e) {
                     player.load(music);
-                    player.Play();
-                    nowPlayingLabel.setText("Now Playing: " + music.getTitle());
+                    player.play(); // Method disesuaikan dengan huruf kecil dari MusicPlayer.java
+                    nowPlayingLabel.setText("Sedang Memutar: " + music.getTitle());
                     playPauseButton.setText("Pause");
                     MenuSelectionManager.defaultManager().clearSelectedPath();
+
+                    /**
+                     * Mereset nilai slider ke 0 saat lagu baru dipilih
+                     */
+                    timeSlider.setValue(0);
                 }
             });
 
             gridPanel.add(songButton);
         }
 
-        // Membuat panel dengan layout grid untuk dropdown
         JScrollPane scrollPane = new JScrollPane(gridPanel);
         scrollPane.setPreferredSize(new Dimension(300, 200));
 
@@ -169,15 +186,17 @@ public class MusicPlayerGUI extends JFrame {
         JPanel mainPanel = new JPanel(new BorderLayout(10, 10));
         mainPanel.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
 
-        nowPlayingLabel = new JLabel("No music playing", SwingConstants.CENTER);
+        // === Label Sedang Memutar ===
+        nowPlayingLabel = new JLabel("Tidak ada musik yang diputar", SwingConstants.CENTER);
         nowPlayingLabel.setFont(new Font("Arial", Font.BOLD, 16));
         mainPanel.add(nowPlayingLabel, BorderLayout.NORTH);
 
+        // === Panel Tombol Kontrol ===
         JPanel controlPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 20, 10));
 
-        JButton backwardButton = new JButton("<< Backward");
-        playPauseButton = new JButton("> Play");
-        JButton forwardButton = new JButton(">> Forward");
+        JButton backwardButton = new JButton("<< Mundur");
+        playPauseButton = new JButton("> Putar");
+        JButton forwardButton = new JButton(">> Maju");
 
         Font buttonFont = new Font("Arial", Font.BOLD, 14);
         backwardButton.setFont(buttonFont);
@@ -206,9 +225,9 @@ public class MusicPlayerGUI extends JFrame {
             public void actionPerformed(ActionEvent e) {
                 if (player.isPlaying()) {
                     player.pause();
-                    playPauseButton.setText("> Play");
+                    playPauseButton.setText("> Putar");
                 } else {
-                    player.Play();
+                    player.play();
                     if (player.getCurrentMusic() != null) {
                         playPauseButton.setText("Pause");
                     }
@@ -232,7 +251,55 @@ public class MusicPlayerGUI extends JFrame {
         controlPanel.add(forwardButton);
 
         mainPanel.add(controlPanel, BorderLayout.CENTER);
-        add(mainPanel, BorderLayout.CENTER);
-    }
 
+        // === PANEL TIMELINE (BARU) ===
+        JPanel timelinePanel = new JPanel(new BorderLayout());
+
+        /**
+         * Menginisialisasi slider dengan rentang contoh 0 hingga 10000 frame
+         */
+        timeSlider = new JSlider(0, 10000, 0);
+
+        /**
+         * * Change listener untuk mendeteksi saat user menggeser (drag)
+         * slider. Memanggil method seek() dari controller untuk melompat ke
+         * frame tujuan.
+         */
+        timeSlider.addChangeListener(new ChangeListener() {
+            @Override
+            public void stateChanged(ChangeEvent e) {
+                /**
+                 * Memastikan kita hanya melakukan 'seek' ketika user secara
+                 * aktif menggeser kursor
+                 */
+                if (timeSlider.getValueIsAdjusting()) {
+                    player.seek(timeSlider.getValue());
+                }
+            }
+        });
+
+        timelinePanel.add(timeSlider, BorderLayout.CENTER);
+        mainPanel.add(timelinePanel, BorderLayout.SOUTH);
+
+        add(mainPanel, BorderLayout.CENTER);
+
+        /**
+         * * Mengaktifkan Timer yang berjalan setiap 500 milidetik (setengah
+         * detik). Timer ini akan memperbarui posisi bar slider agar sesuai
+         * dengan lagu yang sedang berjalan.
+         */
+        progressTimer = new Timer(500, new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                /**
+                 * Hanya perbarui slider jika musik sedang diputar dan user
+                 * tidak sedang menggeser slider manual
+                 */
+                if (player != null && player.isPlaying() && !timeSlider.getValueIsAdjusting()) {
+                    timeSlider.setValue(player.getCurrentFrame());
+                }
+            }
+        });
+        progressTimer.start(); // Memulai timer di latar belakang
+    }
 }
