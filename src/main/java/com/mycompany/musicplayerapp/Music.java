@@ -233,15 +233,112 @@ public class Music {
         this.favorite = favorite;
     }
 
-    // ── Override ──
+    // ── Overloading: displayInfo() ──
+    // Overloading = method dengan nama sama tapi parameter berbeda
+    // dalam satu class. Compiler memilih versi yang tepat berdasarkan
+    // argumen yang diberikan saat pemanggilan.
 
     /**
-     * Representasi string untuk ditampilkan di komponen UI.
+     * Menampilkan info ringkas musik (judul dan artis saja).
+     * Versi tanpa parameter — bentuk paling sederhana.
+     *
+     * <p><b>Overloading #1:</b> displayInfo() — tanpa parameter</p>
+     *
+     * @return string info ringkas "Judul - Artis"
+     */
+    public String displayInfo() {
+        return title + " - " + artist;
+    }
+
+    /**
+     * Menampilkan info musik dengan opsi detail.
+     * Jika detailed=true, menyertakan genre dan status favorit.
+     *
+     * <p><b>Overloading #2:</b> displayInfo(boolean) — 1 parameter</p>
+     *
+     * @param detailed true untuk info lengkap, false untuk ringkas
+     * @return string info sesuai level detail
+     */
+    public String displayInfo(boolean detailed) {
+        if (detailed) {
+            return String.format("Judul: %s | Artis: %s | Genre: %s | Favorit: %s",
+                    title, artist, genre, favorite ? "Ya" : "Tidak");
+        }
+        return displayInfo(); // Delegasi ke versi tanpa parameter
+    }
+
+    /**
+     * Menampilkan info musik dalam format tertentu.
+     * Format yang didukung: "short", "full", "csv".
+     *
+     * <p><b>Overloading #3:</b> displayInfo(String) — parameter tipe berbeda</p>
+     *
+     * @param format format output ("short", "full", atau "csv")
+     * @return string info sesuai format yang diminta
+     */
+    public String displayInfo(String format) {
+        switch (format.toLowerCase()) {
+            case "short":
+                return title;
+            case "full":
+                return String.format("[Musik] %s oleh %s (Genre: %s) | Favorit: %s | Durasi: %d detik",
+                        title, artist, genre, favorite ? "Ya" : "Tidak", durationPerSeconds);
+            case "csv":
+                return String.format("%s,%s,%s,%s,%d",
+                        title, artist, genre, favorite ? "Ya" : "Tidak", durationPerSeconds);
+            default:
+                return displayInfo(); // Default ke versi ringkas
+        }
+    }
+
+    // ── Overriding: toString(), equals(), hashCode() ──
+    // Overriding = subclass menimpa implementasi method yang sudah
+    // didefinisikan di superclass (dalam hal ini java.lang.Object).
+    // Ditandai dengan anotasi @Override.
+
+    /**
+     * Menimpa (override) method toString() dari class Object.
+     * Mengembalikan judul lagu sebagai representasi string.
+     *
+     * <p><b>Override dari:</b> {@link Object#toString()}</p>
      *
      * @return judul lagu
      */
     @Override
     public String toString() {
         return title;
+    }
+
+    /**
+     * Menimpa (override) method equals() dari class Object.
+     * Dua objek Music dianggap sama jika path file-nya identik.
+     *
+     * <p><b>Override dari:</b> {@link Object#equals(Object)}</p>
+     * <p>Konsisten dengan {@link #hashCode()} — kontrak Java.</p>
+     *
+     * @param obj objek pembanding
+     * @return true jika path file sama
+     */
+    @Override
+    public boolean equals(Object obj) {
+        // Referensi sama = pasti sama
+        if (this == obj) return true;
+        // Null atau tipe berbeda = pasti beda
+        if (obj == null || getClass() != obj.getClass()) return false;
+        Music other = (Music) obj;
+        return this.getFullPathFile().equals(other.getFullPathFile());
+    }
+
+    /**
+     * Menimpa (override) method hashCode() dari class Object.
+     * Menghasilkan hash berdasarkan path file, konsisten dengan equals().
+     *
+     * <p><b>Override dari:</b> {@link Object#hashCode()}</p>
+     *
+     * @return nilai hash berdasarkan path file
+     */
+    @Override
+    public int hashCode() {
+        return getFullPathFile().hashCode();
     }
 }

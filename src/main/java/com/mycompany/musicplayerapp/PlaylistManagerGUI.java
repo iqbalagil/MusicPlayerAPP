@@ -142,21 +142,25 @@ public class PlaylistManagerGUI extends JFrame {
 
     /**
      * Menyiapkan panel tombol aksi di bagian bawah.
+     * Terdapat dua baris tombol:
+     * - Baris 1: Putar, Favorit, Edit Info (kontrol pemutaran & metadata)
+     * - Baris 2: Simpan, Hapus, Batal, Close (kontrol CRUD)
      */
     private void setupButtonPanel() {
-        JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 10, 5));
-        buttonPanel.setBorder(BorderFactory.createEmptyBorder(0, 10, 5, 10));
+        JPanel buttonContainer = new JPanel();
+        buttonContainer.setLayout(new BoxLayout(buttonContainer, BoxLayout.Y_AXIS));
+        buttonContainer.setBorder(BorderFactory.createEmptyBorder(0, 10, 5, 10));
+
+        Font btnFont = new Font("Arial", Font.BOLD, 12);
+
+        // ── Baris 1: Kontrol Pemutaran & Metadata ──
+        JPanel controlRow = new JPanel(new FlowLayout(FlowLayout.CENTER, 10, 5));
 
         JButton playButton = new JButton("▶ Putar");
         JButton favoriteButton = new JButton("⭐ Favorit");
-        JButton removeButton = new JButton("🗑 Hapus");
-        JButton editButton = new JButton("✏ Edit Info");
 
-        Font btnFont = new Font("Arial", Font.BOLD, 12);
         playButton.setFont(btnFont);
         favoriteButton.setFont(btnFont);
-        removeButton.setFont(btnFont);
-        editButton.setFont(btnFont);
 
         /** Listener putar: memainkan lagu yang dipilih di tabel */
         playButton.addActionListener(new ActionListener() {
@@ -174,28 +178,70 @@ public class PlaylistManagerGUI extends JFrame {
             }
         });
 
-        /** Listener hapus: menghapus lagu dari playlist */
-        removeButton.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                removeSelectedSong();
-            }
-        });
+        controlRow.add(playButton);
+        controlRow.add(favoriteButton);
 
-        /** Listener edit: membuka dialog edit info lagu */
-        editButton.addActionListener(new ActionListener() {
+        // ── Baris 2: Tombol CRUD (Simpan, Hapus, Batal, Close) ──
+        JPanel crudRow = new JPanel(new FlowLayout(FlowLayout.CENTER, 10, 5));
+
+        JButton simpanButton = new JButton("💾 Simpan");
+        JButton hapusButton = new JButton("🗑 Hapus");
+        JButton batalButton = new JButton("↩ Batal");
+        JButton closeButton = new JButton("✖ Close");
+
+        simpanButton.setFont(btnFont);
+        hapusButton.setFont(btnFont);
+        batalButton.setFont(btnFont);
+        closeButton.setFont(btnFont);
+
+        /**
+         * Listener Simpan: membuka dialog edit info lagu (artis & genre),
+         * lalu menyimpan perubahan ke objek Music dan memperbarui tabel.
+         */
+        simpanButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
                 editSelectedSong();
             }
         });
 
-        buttonPanel.add(playButton);
-        buttonPanel.add(favoriteButton);
-        buttonPanel.add(editButton);
-        buttonPanel.add(removeButton);
+        /** Listener Hapus: menghapus lagu yang dipilih dari playlist */
+        hapusButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                removeSelectedSong();
+            }
+        });
 
-        add(buttonPanel, BorderLayout.SOUTH);
+        /**
+         * Listener Batal: membatalkan seleksi pada tabel dan mereset
+         * field pencarian. Berguna untuk membatalkan aksi yang sedang
+         * dipilih sebelum dikonfirmasi.
+         */
+        batalButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                cancelSelection();
+            }
+        });
+
+        /** Listener Close: menutup jendela Playlist Manager */
+        closeButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                dispose();
+            }
+        });
+
+        crudRow.add(simpanButton);
+        crudRow.add(hapusButton);
+        crudRow.add(batalButton);
+        crudRow.add(closeButton);
+
+        buttonContainer.add(controlRow);
+        buttonContainer.add(crudRow);
+
+        add(buttonContainer, BorderLayout.SOUTH);
     }
 
     /**
@@ -357,6 +403,22 @@ public class PlaylistManagerGUI extends JFrame {
             }
         }
         return null;
+    }
+
+    /**
+     * Membatalkan seleksi saat ini pada tabel dan mereset pencarian.
+     * Menghapus highlight baris yang dipilih dan mengosongkan field pencarian
+     * sehingga tabel kembali menampilkan semua data.
+     */
+    private void cancelSelection() {
+        // Hapus seleksi baris di tabel
+        playlistTable.clearSelection();
+
+        // Reset field pencarian
+        searchField.setText("");
+
+        // Refresh tabel ke tampilan penuh
+        refreshTable();
     }
 
     /**
