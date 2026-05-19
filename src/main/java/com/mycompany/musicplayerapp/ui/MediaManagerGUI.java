@@ -1,4 +1,10 @@
-package com.mycompany.musicplayerapp;
+package com.mycompany.musicplayerapp.ui;
+
+import com.mycompany.musicplayerapp.controller.MusicPlayer;
+import com.mycompany.musicplayerapp.model.AudioMedia;
+import com.mycompany.musicplayerapp.model.Audiobook;
+import com.mycompany.musicplayerapp.model.Music;
+import com.mycompany.musicplayerapp.model.Podcast;
 
 import java.awt.*;
 import java.awt.event.*;

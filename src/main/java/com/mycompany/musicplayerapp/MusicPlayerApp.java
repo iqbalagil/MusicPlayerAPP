@@ -4,6 +4,7 @@
 
 package com.mycompany.musicplayerapp;
 
+import com.mycompany.musicplayerapp.ui.MusicPlayerGUI;
 import javax.swing.SwingUtilities;
 
 /**
