@@ -8,20 +8,24 @@ import java.io.File;
 
 /**
  * Class Music merepresentasikan satu entitas lagu MP3.
- * Menerapkan enkapsulasi penuh: semua field bersifat private,
- * akses dilakukan melalui getter dan setter dengan validasi.
+ * Merupakan implementasi konkret dari abstract class {@link AudioMedia}.
+ *
+ * <p><b>Penerapan Abstraksi:</b></p>
+ * <ul>
+ *   <li>{@code extends AudioMedia} — mewarisi field dan method umum dari abstract class</li>
+ *   <li>Mengimplementasikan semua abstract method: displayInfo(), getMediaType(), getSummary()</li>
+ *   <li>Menambahkan field khusus musik: artist, genre</li>
+ * </ul>
+ *
+ * <p><b>Penerapan Enkapsulasi:</b> semua field bersifat private,
+ * akses dilakukan melalui getter dan setter dengan validasi.</p>
  *
  * @author iqbalagil
+ * @see AudioMedia
  */
-public class Music {
+public class Music extends AudioMedia {
 
     // ── Field Private (Enkapsulasi) ──
-
-    /** Referensi file MP3 di sistem */
-    private File file;
-
-    /** Judul lagu (tanpa ekstensi .mp3) */
-    private String title;
 
     /** Nama artis/penyanyi */
     private String artist;
@@ -29,31 +33,21 @@ public class Music {
     /** Genre musik */
     private String genre;
 
-    /** Total frame audio */
-    private long totalFrames;
-
-    /** Durasi lagu dalam detik */
-    private int durationPerSeconds;
-
-    /** Status favorit lagu */
-    private boolean favorite;
-
     // ── Konstruktor ──
 
     /**
      * Membuat objek Music dari file MP3 yang diunggah.
+     * Memanggil konstruktor abstract parent {@link AudioMedia#AudioMedia(File)}
+     * untuk inisialisasi field umum (file, title, totalFrames, dll).
      * Judul otomatis diambil dari nama file tanpa ekstensi.
      *
      * @param file referensi file MP3
      */
     public Music(File file) {
-        this.file = file;
-        this.title = parseTitle(file.getName());
+        // Memanggil konstruktor abstract class AudioMedia
+        super(file);
         this.artist = "Tidak Diketahui";
         this.genre = "Umum";
-        this.totalFrames = 0;
-        this.durationPerSeconds = 0;
-        this.favorite = false;
     }
 
     /**
@@ -69,40 +63,38 @@ public class Music {
         setGenre(genre);
     }
 
-    // ── Method Private (Enkapsulasi Internal) ──
+    // ── Implementasi Abstract Method dari AudioMedia ──
+    // Method-method berikut WAJIB diimplementasikan karena AudioMedia
+    // mendefinisikannya sebagai abstract. Tanpa implementasi ini,
+    // class Music tidak akan bisa di-compile.
 
     /**
-     * Menghapus ekstensi ".mp3" dari nama file agar tampilan lebih bersih.
+     * [IMPLEMENTASI ABSTRACT] Mengembalikan jenis media.
+     * Music mengembalikan "Musik" sebagai identifikasi tipe.
      *
-     * @param fileName nama file asli
-     * @return nama file tanpa ekstensi
+     * <p><b>Implementasi dari:</b> {@link AudioMedia#getMediaType()}</p>
+     *
+     * @return string "Musik"
      */
-    private String parseTitle(String fileName) {
-        if (fileName.toLowerCase().endsWith(".mp3")) {
-            return fileName.substring(0, fileName.length() - 4);
-        }
-        return fileName;
+    @Override
+    public String getMediaType() {
+        return "Musik";
+    }
+
+    /**
+     * [IMPLEMENTASI ABSTRACT] Mengembalikan deskripsi singkat musik.
+     * Format: "Lagu 'Judul' oleh Artis"
+     *
+     * <p><b>Implementasi dari:</b> {@link AudioMedia#getSummary()}</p>
+     *
+     * @return string deskripsi singkat
+     */
+    @Override
+    public String getSummary() {
+        return String.format("Lagu '%s' oleh %s", title, artist);
     }
 
     // ── Getter (Akses Terkontrol) ──
-
-    /**
-     * Mengambil referensi file MP3.
-     *
-     * @return objek File musik
-     */
-    public File getFile() {
-        return file;
-    }
-
-    /**
-     * Mengambil judul lagu.
-     *
-     * @return judul lagu tanpa ekstensi
-     */
-    public String getTitle() {
-        return title;
-    }
 
     /**
      * Mengambil nama artis.
@@ -122,55 +114,7 @@ public class Music {
         return genre;
     }
 
-    /**
-     * Mengambil total frame audio.
-     *
-     * @return jumlah total frame
-     */
-    public long getTotalFrames() {
-        return totalFrames;
-    }
-
-    /**
-     * Mengambil durasi lagu.
-     *
-     * @return durasi dalam detik
-     */
-    public int getDurationPerSeconds() {
-        return durationPerSeconds;
-    }
-
-    /**
-     * Mengecek apakah lagu ditandai sebagai favorit.
-     *
-     * @return true jika favorit
-     */
-    public boolean isFavorite() {
-        return favorite;
-    }
-
-    /**
-     * Mengambil alamat lengkap file MP3 di sistem.
-     *
-     * @return path absolut file
-     */
-    public String getFullPathFile() {
-        return file.getAbsolutePath();
-    }
-
     // ── Setter dengan Validasi (Enkapsulasi) ──
-
-    /**
-     * Mengatur judul lagu secara manual.
-     * Validasi: judul tidak boleh null atau kosong.
-     *
-     * @param title judul baru
-     */
-    public void setTitle(String title) {
-        if (title != null && !title.trim().isEmpty()) {
-            this.title = title.trim();
-        }
-    }
 
     /**
      * Mengatur nama artis.
@@ -200,65 +144,36 @@ public class Music {
         }
     }
 
-    /**
-     * Mengatur total frame audio.
-     * Validasi: tidak boleh negatif.
-     *
-     * @param totalFrames jumlah frame
-     */
-    public void setTotalFrames(long totalFrames) {
-        if (totalFrames >= 0) {
-            this.totalFrames = totalFrames;
-        }
-    }
+    // ── Implementasi Abstract: displayInfo() (Overloading) ──
+    // Ketiga versi displayInfo() merupakan implementasi dari abstract method
+    // yang didefinisikan di AudioMedia. Sekaligus menunjukkan overloading
+    // (method nama sama, parameter berbeda) di dalam satu class.
 
     /**
-     * Mengatur durasi lagu.
-     * Validasi: tidak boleh negatif.
-     *
-     * @param durationPerSeconds durasi dalam detik
-     */
-    public void setDurationPerSeconds(int durationPerSeconds) {
-        if (durationPerSeconds >= 0) {
-            this.durationPerSeconds = durationPerSeconds;
-        }
-    }
-
-    /**
-     * Mengatur status favorit lagu.
-     *
-     * @param favorite true untuk menandai favorit
-     */
-    public void setFavorite(boolean favorite) {
-        this.favorite = favorite;
-    }
-
-    // ── Overloading: displayInfo() ──
-    // Overloading = method dengan nama sama tapi parameter berbeda
-    // dalam satu class. Compiler memilih versi yang tepat berdasarkan
-    // argumen yang diberikan saat pemanggilan.
-
-    /**
-     * Menampilkan info ringkas musik (judul dan artis saja).
+     * [IMPLEMENTASI ABSTRACT] Menampilkan info ringkas musik (judul dan artis saja).
      * Versi tanpa parameter — bentuk paling sederhana.
      *
+     * <p><b>Implementasi dari:</b> {@link AudioMedia#displayInfo()}</p>
      * <p><b>Overloading #1:</b> displayInfo() — tanpa parameter</p>
      *
      * @return string info ringkas "Judul - Artis"
      */
+    @Override
     public String displayInfo() {
         return title + " - " + artist;
     }
 
     /**
-     * Menampilkan info musik dengan opsi detail.
+     * [IMPLEMENTASI ABSTRACT] Menampilkan info musik dengan opsi detail.
      * Jika detailed=true, menyertakan genre dan status favorit.
      *
+     * <p><b>Implementasi dari:</b> {@link AudioMedia#displayInfo(boolean)}</p>
      * <p><b>Overloading #2:</b> displayInfo(boolean) — 1 parameter</p>
      *
      * @param detailed true untuk info lengkap, false untuk ringkas
      * @return string info sesuai level detail
      */
+    @Override
     public String displayInfo(boolean detailed) {
         if (detailed) {
             return String.format("Judul: %s | Artis: %s | Genre: %s | Favorit: %s",
@@ -268,21 +183,23 @@ public class Music {
     }
 
     /**
-     * Menampilkan info musik dalam format tertentu.
+     * [IMPLEMENTASI ABSTRACT] Menampilkan info musik dalam format tertentu.
      * Format yang didukung: "short", "full", "csv".
      *
+     * <p><b>Implementasi dari:</b> {@link AudioMedia#displayInfo(String)}</p>
      * <p><b>Overloading #3:</b> displayInfo(String) — parameter tipe berbeda</p>
      *
      * @param format format output ("short", "full", atau "csv")
      * @return string info sesuai format yang diminta
      */
+    @Override
     public String displayInfo(String format) {
         switch (format.toLowerCase()) {
             case "short":
                 return title;
             case "full":
-                return String.format("[Musik] %s oleh %s (Genre: %s) | Favorit: %s | Durasi: %d detik",
-                        title, artist, genre, favorite ? "Ya" : "Tidak", durationPerSeconds);
+                return String.format("[Musik] %s oleh %s (Genre: %s) | Favorit: %s | Durasi: %s",
+                        title, artist, genre, favorite ? "Ya" : "Tidak", getFormattedDuration());
             case "csv":
                 return String.format("%s,%s,%s,%s,%d",
                         title, artist, genre, favorite ? "Ya" : "Tidak", durationPerSeconds);
@@ -291,54 +208,18 @@ public class Music {
         }
     }
 
-    // ── Overriding: toString(), equals(), hashCode() ──
-    // Overriding = subclass menimpa implementasi method yang sudah
-    // didefinisikan di superclass (dalam hal ini java.lang.Object).
-    // Ditandai dengan anotasi @Override.
+    // ── Overriding: toString() dari AudioMedia ──
 
     /**
-     * Menimpa (override) method toString() dari class Object.
+     * Menimpa (override) method toString() dari abstract class AudioMedia.
      * Mengembalikan judul lagu sebagai representasi string.
      *
-     * <p><b>Override dari:</b> {@link Object#toString()}</p>
+     * <p><b>Override dari:</b> {@link AudioMedia#toString()}</p>
      *
      * @return judul lagu
      */
     @Override
     public String toString() {
         return title;
-    }
-
-    /**
-     * Menimpa (override) method equals() dari class Object.
-     * Dua objek Music dianggap sama jika path file-nya identik.
-     *
-     * <p><b>Override dari:</b> {@link Object#equals(Object)}</p>
-     * <p>Konsisten dengan {@link #hashCode()} — kontrak Java.</p>
-     *
-     * @param obj objek pembanding
-     * @return true jika path file sama
-     */
-    @Override
-    public boolean equals(Object obj) {
-        // Referensi sama = pasti sama
-        if (this == obj) return true;
-        // Null atau tipe berbeda = pasti beda
-        if (obj == null || getClass() != obj.getClass()) return false;
-        Music other = (Music) obj;
-        return this.getFullPathFile().equals(other.getFullPathFile());
-    }
-
-    /**
-     * Menimpa (override) method hashCode() dari class Object.
-     * Menghasilkan hash berdasarkan path file, konsisten dengan equals().
-     *
-     * <p><b>Override dari:</b> {@link Object#hashCode()}</p>
-     *
-     * @return nilai hash berdasarkan path file
-     */
-    @Override
-    public int hashCode() {
-        return getFullPathFile().hashCode();
     }
 }

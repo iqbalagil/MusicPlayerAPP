@@ -44,8 +44,6 @@ public class MusicInfoGUI extends JFrame {
     private boolean isEditMode;
 
     /** Backup data sebelum edit, untuk fitur Batal */
-    private String backupArtist;
-    private String backupGenre;
     private boolean backupFavorite;
 
     /** Referensi tombol agar bisa diakses saat toggle mode */
@@ -69,8 +67,8 @@ public class MusicInfoGUI extends JFrame {
 
     /** Indeks baris di tabel untuk setiap properti */
     private static final int ROW_JUDUL = 0;
-    private static final int ROW_ARTIS = 1;
-    private static final int ROW_GENRE = 2;
+    private static final int ROW_TIPE = 1;
+    private static final int ROW_RINGKASAN = 2;
     private static final int ROW_LOKASI = 3;
     private static final int ROW_FAVORIT = 4;
     private static final int ROW_STATUS = 5;
@@ -126,7 +124,7 @@ public class MusicInfoGUI extends JFrame {
                 // Kolom Properti (0) tidak pernah bisa diedit
                 if (column == 0) return false;
                 // Kolom Nilai (1) hanya bisa diedit di mode edit dan baris tertentu
-                if (isEditMode && (row == ROW_ARTIS || row == ROW_GENRE || row == ROW_FAVORIT)) {
+                if (isEditMode && (row == ROW_FAVORIT)) {
                     return true;
                 }
                 return false;
@@ -135,8 +133,8 @@ public class MusicInfoGUI extends JFrame {
 
         // Isi baris awal tabel dengan label properti dan nilai default
         tableModel.addRow(new Object[]{"🎵 Judul", "-"});
-        tableModel.addRow(new Object[]{"🎤 Artis", "-"});
-        tableModel.addRow(new Object[]{"🎼 Genre", "-"});
+        tableModel.addRow(new Object[]{"📀 Tipe Media", "-"});
+        tableModel.addRow(new Object[]{"📝 Ringkasan", "-"});
         tableModel.addRow(new Object[]{"📁 Lokasi File", "-"});
         tableModel.addRow(new Object[]{"⭐ Favorit", "-"});
         tableModel.addRow(new Object[]{"📊 Status", "-"});
@@ -290,15 +288,13 @@ public class MusicInfoGUI extends JFrame {
      * Kolom Artis, Genre, dan Favorit menjadi bisa diedit di tabel.
      */
     private void enterEditMode() {
-        Music currentMusic = player.getCurrentMusic();
+        AudioMedia currentMusic = player.getCurrentMusic();
         if (currentMusic == null) {
-            showWarning("Tidak ada musik yang dimuat untuk diedit.");
+            showWarning("Tidak ada media yang dimuat untuk diedit.");
             return;
         }
 
         // Backup data sebelum edit untuk fitur Batal
-        backupArtist = currentMusic.getArtist();
-        backupGenre = currentMusic.getGenre();
         backupFavorite = currentMusic.isFavorite();
 
         isEditMode = true;
@@ -316,7 +312,7 @@ public class MusicInfoGUI extends JFrame {
         infoTable.getColumnModel().getColumn(1).setPreferredWidth(280);
 
         JOptionPane.showMessageDialog(this,
-                "Mode Edit aktif. Edit kolom Artis, Genre, atau Favorit (Ya/Tidak) lalu klik Simpan.",
+                "Mode Edit aktif. Edit kolom Favorit (Ya/Tidak) lalu klik Simpan.",
                 "Mode Edit", JOptionPane.INFORMATION_MESSAGE);
     }
 
@@ -325,7 +321,7 @@ public class MusicInfoGUI extends JFrame {
      * Membaca nilai dari sel tabel dan memanggil setter yang tervalidasi.
      */
     private void saveChanges() {
-        Music currentMusic = player.getCurrentMusic();
+        AudioMedia currentMusic = player.getCurrentMusic();
         if (currentMusic == null) return;
 
         // Hentikan editing sel jika masih aktif
@@ -333,13 +329,9 @@ public class MusicInfoGUI extends JFrame {
             infoTable.getCellEditor().stopCellEditing();
         }
 
-        // Ambil nilai dari tabel dan simpan ke objek Music via setter
-        String newArtist = (String) tableModel.getValueAt(ROW_ARTIS, 1);
-        String newGenre = (String) tableModel.getValueAt(ROW_GENRE, 1);
+        // Ambil nilai dari tabel dan simpan ke objek AudioMedia via setter
         String favValue = (String) tableModel.getValueAt(ROW_FAVORIT, 1);
 
-        currentMusic.setArtist(newArtist);
-        currentMusic.setGenre(newGenre);
         currentMusic.setFavorite(
                 favValue.toLowerCase().contains("ya") || favValue.contains("⭐"));
 
@@ -355,11 +347,9 @@ public class MusicInfoGUI extends JFrame {
      * Membatalkan edit: mengembalikan data dari backup dan keluar mode edit.
      */
     private void cancelEdit() {
-        Music currentMusic = player.getCurrentMusic();
+        AudioMedia currentMusic = player.getCurrentMusic();
         if (currentMusic != null) {
             // Kembalikan data dari backup
-            currentMusic.setArtist(backupArtist);
-            currentMusic.setGenre(backupGenre);
             currentMusic.setFavorite(backupFavorite);
         }
 
@@ -396,18 +386,18 @@ public class MusicInfoGUI extends JFrame {
      * Jika tidak ada lagu, menampilkan tanda "-".
      */
     private void refreshInfo() {
-        Music currentMusic = player.getCurrentMusic();
+        AudioMedia currentMusic = player.getCurrentMusic();
 
         if (currentMusic != null) {
             tableModel.setValueAt(currentMusic.getTitle(), ROW_JUDUL, 1);
-            tableModel.setValueAt(currentMusic.getArtist(), ROW_ARTIS, 1);
-            tableModel.setValueAt(currentMusic.getGenre(), ROW_GENRE, 1);
+            tableModel.setValueAt(currentMusic.getMediaType(), ROW_TIPE, 1);
+            tableModel.setValueAt(currentMusic.getSummary(), ROW_RINGKASAN, 1);
             tableModel.setValueAt(shortenPath(currentMusic.getFullPathFile()), ROW_LOKASI, 1);
             tableModel.setValueAt(currentMusic.isFavorite() ? "⭐ Ya" : "Tidak", ROW_FAVORIT, 1);
         } else {
             tableModel.setValueAt("-", ROW_JUDUL, 1);
-            tableModel.setValueAt("-", ROW_ARTIS, 1);
-            tableModel.setValueAt("-", ROW_GENRE, 1);
+            tableModel.setValueAt("-", ROW_TIPE, 1);
+            tableModel.setValueAt("-", ROW_RINGKASAN, 1);
             tableModel.setValueAt("-", ROW_LOKASI, 1);
             tableModel.setValueAt("-", ROW_FAVORIT, 1);
         }

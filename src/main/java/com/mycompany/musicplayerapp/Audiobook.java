@@ -8,29 +8,24 @@ import java.io.File;
 
 /**
  * Class Audiobook merepresentasikan file audio bertipe buku audio.
- * Merupakan turunan (inheritance) dari class Music, karena audiobook
- * memiliki kesamaan dasar (file, judul, durasi) namun dengan
- * atribut tambahan khusus buku audio.
+ * Merupakan implementasi konkret dari abstract class {@link AudioMedia}.
  *
- * <p>
- * <b>Penerapan Inheritance:</b>
- * </p>
+ * <p><b>Penerapan Abstraksi:</b></p>
  * <ul>
- * <li>{@code extends Music} — mewarisi semua field dan method dari Music</li>
- * <li>{@code super(file)} — memanggil konstruktor induk untuk inisialisasi
- * dasar</li>
- * <li>{@code @Override toString()} — menimpa representasi string dari
- * Music</li>
- * <li>Menambahkan field khusus: author, narrator, chapterNumber,
- * totalChapters</li>
+ *   <li>{@code extends AudioMedia} — mewarisi field dan method umum dari abstract class</li>
+ *   <li>Mengimplementasikan semua abstract method: displayInfo(), getMediaType(), getSummary()</li>
+ *   <li>Menambahkan field khusus audiobook: author, narrator, chapterNumber, totalChapters</li>
  * </ul>
  *
+ * <p><b>Penerapan Enkapsulasi:</b> semua field tambahan bersifat private,
+ * akses dilakukan melalui getter dan setter dengan validasi.</p>
+ *
  * @author iqbalagil
- * @see Music
+ * @see AudioMedia
  */
-public class Audiobook extends Music {
+public class Audiobook extends AudioMedia {
 
-    // ── Field Private Tambahan (Enkapsulasi + Inheritance) ──
+    // ── Field Private Tambahan (Enkapsulasi) ──
 
     /** Nama penulis buku asli */
     private String author;
@@ -44,18 +39,21 @@ public class Audiobook extends Music {
     /** Total jumlah bab dalam audiobook */
     private int totalChapters;
 
+    /** Genre audiobook */
+    private String genre;
+
     // ── Konstruktor ──
 
     /**
      * Membuat objek Audiobook dari file audio.
-     * Memanggil konstruktor induk {@link Music#Music(File)} untuk
-     * menginisialisasi field dasar (file, title, artist, genre, dll).
+     * Memanggil konstruktor abstract parent {@link AudioMedia#AudioMedia(File)}
+     * untuk inisialisasi field umum (file, title, totalFrames, dll).
      * Field khusus audiobook diisi dengan nilai default.
      *
      * @param file referensi file audio audiobook
      */
     public Audiobook(File file) {
-        // Memanggil konstruktor parent class Music
+        // Memanggil konstruktor abstract class AudioMedia
         super(file);
 
         // Inisialisasi field khusus audiobook dengan nilai default
@@ -63,9 +61,7 @@ public class Audiobook extends Music {
         this.narrator = "Tidak Diketahui";
         this.chapterNumber = 1;
         this.totalChapters = 1;
-
-        // Set genre default untuk audiobook (override dari Music)
-        setGenre("Audiobook");
+        this.genre = "Audiobook";
     }
 
     /**
@@ -80,12 +76,42 @@ public class Audiobook extends Music {
      */
     public Audiobook(File file, String author, String narrator,
             int chapterNumber, int totalChapters) {
-        // Memanggil konstruktor Audiobook(File) yang sudah memanggil super(file)
         this(file);
         setAuthor(author);
         setNarrator(narrator);
         setTotalChapters(totalChapters);
         setChapterNumber(chapterNumber);
+    }
+
+    // ── Implementasi Abstract Method dari AudioMedia ──
+    // Method-method berikut WAJIB diimplementasikan karena AudioMedia
+    // mendefinisikannya sebagai abstract.
+
+    /**
+     * [IMPLEMENTASI ABSTRACT] Mengembalikan jenis media.
+     * Audiobook mengembalikan "Audiobook" sebagai identifikasi tipe.
+     *
+     * <p><b>Implementasi dari:</b> {@link AudioMedia#getMediaType()}</p>
+     *
+     * @return string "Audiobook"
+     */
+    @Override
+    public String getMediaType() {
+        return "Audiobook";
+    }
+
+    /**
+     * [IMPLEMENTASI ABSTRACT] Mengembalikan deskripsi singkat audiobook.
+     * Format: "Audiobook 'Judul' oleh Penulis, dibacakan oleh Narator (Bab X/Y)"
+     *
+     * <p><b>Implementasi dari:</b> {@link AudioMedia#getSummary()}</p>
+     *
+     * @return string deskripsi singkat
+     */
+    @Override
+    public String getSummary() {
+        return String.format("Audiobook '%s' oleh %s, dibacakan oleh %s (Bab %d/%d)",
+                title, author, narrator, chapterNumber, totalChapters);
     }
 
     // ── Getter (Akses Terkontrol) ──
@@ -127,8 +153,16 @@ public class Audiobook extends Music {
     }
 
     /**
+     * Mengambil genre audiobook.
+     *
+     * @return genre audiobook
+     */
+    public String getGenre() {
+        return genre;
+    }
+
+    /**
      * Menghitung persentase progres baca berdasarkan bab.
-     * Method ini khusus milik Audiobook, tidak ada di parent Music.
      *
      * @return persentase progres (0-100)
      */
@@ -141,7 +175,6 @@ public class Audiobook extends Music {
 
     /**
      * Mengambil informasi lengkap audiobook dalam format teks.
-     * Method ini khusus milik Audiobook, tidak ada di parent Music.
      *
      * @return string informasi lengkap audiobook
      */
@@ -211,6 +244,20 @@ public class Audiobook extends Music {
     }
 
     /**
+     * Mengatur genre audiobook.
+     * Validasi: jika null atau kosong, diisi "Audiobook".
+     *
+     * @param genre genre baru
+     */
+    public void setGenre(String genre) {
+        if (genre != null && !genre.trim().isEmpty()) {
+            this.genre = genre.trim();
+        } else {
+            this.genre = "Audiobook";
+        }
+    }
+
+    /**
      * Berpindah ke bab selanjutnya jika belum di bab terakhir.
      *
      * @return true jika berhasil pindah, false jika sudah di bab terakhir
@@ -246,9 +293,7 @@ public class Audiobook extends Music {
     /**
      * Mengatur informasi bab — hanya nomor bab saat ini.
      *
-     * <p>
-     * <b>Overloading #1:</b> setChapterInfo(int) — 1 parameter
-     * </p>
+     * <p><b>Overloading #1:</b> setChapterInfo(int) — 1 parameter</p>
      *
      * @param chapterNumber nomor bab yang sedang dibaca
      */
@@ -259,9 +304,7 @@ public class Audiobook extends Music {
     /**
      * Mengatur informasi bab — nomor bab dan total bab.
      *
-     * <p>
-     * <b>Overloading #2:</b> setChapterInfo(int, int) — 2 parameter
-     * </p>
+     * <p><b>Overloading #2:</b> setChapterInfo(int, int) — 2 parameter</p>
      *
      * @param chapterNumber nomor bab saat ini
      * @param totalChapters total jumlah bab dalam audiobook
@@ -274,9 +317,7 @@ public class Audiobook extends Music {
     /**
      * Mengatur informasi bab — nomor bab, total bab, dan narator.
      *
-     * <p>
-     * <b>Overloading #3:</b> setChapterInfo(int, int, String) — 3 parameter
-     * </p>
+     * <p><b>Overloading #3:</b> setChapterInfo(int, int, String) — 3 parameter</p>
      *
      * @param chapterNumber nomor bab saat ini
      * @param totalChapters total jumlah bab
@@ -288,19 +329,15 @@ public class Audiobook extends Music {
         setNarrator(narrator);
     }
 
-    // ── Overriding: displayInfo() dari Parent Music ──
-    // Overriding = subclass menimpa implementasi method yang sudah
-    // didefinisikan di superclass. Audiobook menimpa displayInfo() dari Music
-    // untuk menambahkan informasi khusus audiobook (penulis, narator, bab).
+    // ── Implementasi Abstract: displayInfo() (Overloading) ──
+    // Ketiga versi displayInfo() merupakan implementasi dari abstract method
+    // yang didefinisikan di AudioMedia. Sekaligus menunjukkan overloading.
 
     /**
-     * Menimpa (override) displayInfo() dari Music.
-     * Music menampilkan "Judul - Artis",
-     * Audiobook menampilkan format khusus dengan penulis dan progres bab.
+     * [IMPLEMENTASI ABSTRACT] Menampilkan info ringkas audiobook.
+     * Format: "[Audiobook] Judul - Bab X/Y (Z%)"
      *
-     * <p>
-     * <b>Override dari:</b> {@link Music#displayInfo()}
-     * </p>
+     * <p><b>Implementasi dari:</b> {@link AudioMedia#displayInfo()}</p>
      *
      * @return info ringkas audiobook
      */
@@ -311,12 +348,10 @@ public class Audiobook extends Music {
     }
 
     /**
-     * Menimpa (override) displayInfo(boolean) dari Music.
-     * Versi Audiobook menambahkan penulis, narator, dan progres baca.
+     * [IMPLEMENTASI ABSTRACT] Menampilkan info audiobook dengan opsi detail.
+     * Jika detailed=true, menampilkan penulis, narator, dan progres baca.
      *
-     * <p>
-     * <b>Override dari:</b> {@link Music#displayInfo(boolean)}
-     * </p>
+     * <p><b>Implementasi dari:</b> {@link AudioMedia#displayInfo(boolean)}</p>
      *
      * @param detailed true untuk info lengkap audiobook
      * @return info audiobook sesuai level detail
@@ -333,12 +368,10 @@ public class Audiobook extends Music {
     }
 
     /**
-     * Menimpa (override) displayInfo(String) dari Music.
+     * [IMPLEMENTASI ABSTRACT] Menampilkan info audiobook dalam format tertentu.
      * Format output disesuaikan untuk konteks audiobook.
      *
-     * <p>
-     * <b>Override dari:</b> {@link Music#displayInfo(String)}
-     * </p>
+     * <p><b>Implementasi dari:</b> {@link AudioMedia#displayInfo(String)}</p>
      *
      * @param format format output ("short", "full", atau "csv")
      * @return info audiobook sesuai format
@@ -362,16 +395,13 @@ public class Audiobook extends Music {
         }
     }
 
-    // ── Override: toString() dari Parent Music ──
+    // ── Override: toString() dari AudioMedia ──
 
     /**
-     * Menimpa (override) method toString() dari parent class Music.
-     * Music.toString() hanya mengembalikan judul,
-     * sedangkan Audiobook.toString() menampilkan format khusus audiobook.
+     * Menimpa (override) method toString() dari abstract class AudioMedia.
+     * Menampilkan format khusus audiobook.
      *
-     * <p>
-     * <b>Override dari:</b> {@link Music#toString()}
-     * </p>
+     * <p><b>Override dari:</b> {@link AudioMedia#toString()}</p>
      *
      * @return representasi string dengan format "[Audiobook] Judul - Bab X/Y"
      */

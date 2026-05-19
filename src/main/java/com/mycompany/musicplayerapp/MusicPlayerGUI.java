@@ -23,8 +23,8 @@ public class MusicPlayerGUI extends JFrame {
 
     // ── Field Private (Enkapsulasi Komponen UI) ──
 
-    /** Daftar musik yang telah diunggah */
-    private ArrayList<Music> musicList;
+    /** Daftar media audio yang telah diunggah */
+    private ArrayList<AudioMedia> musicList;
 
     /** Objek pengontrol pemutaran musik */
     private MusicPlayer player;
@@ -133,8 +133,18 @@ public class MusicPlayerGUI extends JFrame {
             }
         });
 
+        JMenuItem mediaManagerItem = new JMenuItem("🎧 Manajer Media");
+        /** Listener: membuka jendela Manajer Media (Upcasting & Downcasting) */
+        mediaManagerItem.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                new MediaManagerGUI(musicList, player);
+            }
+        });
+
         viewMenu.add(playlistItem);
         viewMenu.add(infoItem);
+        viewMenu.add(mediaManagerItem);
         menuBar.add(viewMenu);
 
         setJMenuBar(menuBar);
@@ -163,11 +173,11 @@ public class MusicPlayerGUI extends JFrame {
      * Menambahkan musik ke daftar dan memperbarui menu.
      * Mencegah duplikasi file yang sama.
      *
-     * @param music objek Music yang ditambahkan
+     * @param music objek AudioMedia yang ditambahkan
      */
-    private void addMusicToList(Music music) {
+    private void addMusicToList(AudioMedia music) {
         // Cek duplikasi berdasarkan path file
-        for (Music m : musicList) {
+        for (AudioMedia m : musicList) {
             if (m.getFullPathFile().equals(music.getFullPathFile())) {
                 JOptionPane.showMessageDialog(this,
                         "Musik sudah ada di daftar: " + music.getTitle());
@@ -197,7 +207,7 @@ public class MusicPlayerGUI extends JFrame {
         JPanel gridPanel = new JPanel(new GridLayout(rows, cols, 5, 5));
         gridPanel.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
 
-        for (Music music : musicList) {
+        for (AudioMedia music : musicList) {
             JButton songButton = new JButton(music.getTitle());
             songButton.setFont(new Font("Arial", Font.PLAIN, 12));
 
@@ -226,9 +236,9 @@ public class MusicPlayerGUI extends JFrame {
      * Memuat dan memutar musik yang dipilih.
      * Memperbarui label dan tombol sesuai status.
      *
-     * @param music lagu yang akan diputar
+     * @param music media audio yang akan diputar
      */
-    private void playSelectedMusic(Music music) {
+    private void playSelectedMusic(AudioMedia music) {
         player.load(music);
         player.play();
         updateNowPlayingLabel(music.getTitle());
@@ -401,7 +411,7 @@ public class MusicPlayerGUI extends JFrame {
      *
      * @return salinan ArrayList musik
      */
-    public ArrayList<Music> getMusicList() {
+    public ArrayList<AudioMedia> getMusicList() {
         return new ArrayList<>(musicList);
     }
 }

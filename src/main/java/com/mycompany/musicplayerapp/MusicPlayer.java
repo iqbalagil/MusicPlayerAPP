@@ -30,8 +30,8 @@ public class MusicPlayer {
     /** Clip audio (cadangan untuk format lain) */
     private Clip clip;
 
-    /** Musik yang sedang dimuat/diputar */
-    private Music currentMusic;
+    /** Media audio yang sedang dimuat/diputar (bisa Music, Podcast, atau Audiobook) */
+    private AudioMedia currentMusic;
 
     /** Status jeda pemutaran */
     private boolean isPaused;
@@ -73,9 +73,9 @@ public class MusicPlayer {
      * Memuat musik baru ke player.
      * Menghentikan musik sebelumnya jika ada.
      *
-     * @param music objek Music yang akan dimuat
+     * @param music objek AudioMedia yang akan dimuat (Music, Podcast, atau Audiobook)
      */
-    public void load(Music music) {
+    public void load(AudioMedia music) {
         if (music == null) {
             return;
         }
@@ -222,11 +222,11 @@ public class MusicPlayer {
     }
 
     /**
-     * Mengambil objek Music yang sedang dimuat.
+     * Mengambil objek AudioMedia yang sedang dimuat.
      *
-     * @return Music sekarang, atau null jika tidak ada
+     * @return AudioMedia sekarang, atau null jika tidak ada
      */
-    public Music getCurrentMusic() {
+    public AudioMedia getCurrentMusic() {
         return currentMusic;
     }
 

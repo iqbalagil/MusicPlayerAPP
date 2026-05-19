@@ -8,24 +8,31 @@ import java.io.File;
 
 /**
  * Class Podcast merepresentasikan file audio bertipe podcast.
- * Merupakan turunan (inheritance) dari class Music, karena podcast
- * memiliki kesamaan dasar (file, judul, durasi) namun dengan
- * atribut tambahan khusus podcast.
+ * Merupakan implementasi konkret dari abstract class {@link AudioMedia}.
  *
- * <p><b>Penerapan Inheritance:</b></p>
+ * <p>
+ * <b>Penerapan Abstraksi:</b>
+ * </p>
  * <ul>
- *   <li>{@code extends Music} — mewarisi semua field dan method dari Music</li>
- *   <li>{@code super(file)} — memanggil konstruktor induk untuk inisialisasi dasar</li>
- *   <li>{@code @Override toString()} — menimpa representasi string dari Music</li>
- *   <li>Menambahkan field khusus: host, episodeNumber, channelName, description</li>
+ * <li>{@code extends AudioMedia} — mewarisi field dan method umum dari abstract
+ * class</li>
+ * <li>Mengimplementasikan semua abstract method: displayInfo(), getMediaType(),
+ * getSummary()</li>
+ * <li>Menambahkan field khusus podcast: host, episodeNumber, channelName,
+ * description</li>
  * </ul>
  *
+ * <p>
+ * <b>Penerapan Enkapsulasi:</b> semua field tambahan bersifat private,
+ * akses dilakukan melalui getter dan setter dengan validasi.
+ * </p>
+ *
  * @author iqbalagil
- * @see Music
+ * @see AudioMedia
  */
-public class Podcast extends Music {
+public class Podcast extends AudioMedia {
 
-    // ── Field Private Tambahan (Enkapsulasi + Inheritance) ──
+    // ── Field Private Tambahan (Enkapsulasi) ──
 
     /** Nama pembawa acara / host podcast */
     private String host;
@@ -39,18 +46,21 @@ public class Podcast extends Music {
     /** Deskripsi singkat episode */
     private String description;
 
+    /** Genre podcast */
+    private String genre;
+
     // ── Konstruktor ──
 
     /**
      * Membuat objek Podcast dari file audio.
-     * Memanggil konstruktor induk {@link Music#Music(File)} untuk
-     * menginisialisasi field dasar (file, title, artist, genre, dll).
+     * Memanggil konstruktor abstract parent {@link AudioMedia#AudioMedia(File)}
+     * untuk inisialisasi field umum (file, title, totalFrames, dll).
      * Field khusus podcast diisi dengan nilai default.
      *
      * @param file referensi file audio podcast
      */
     public Podcast(File file) {
-        // Memanggil konstruktor parent class Music
+        // Memanggil konstruktor abstract class AudioMedia
         super(file);
 
         // Inisialisasi field khusus podcast dengan nilai default
@@ -58,9 +68,7 @@ public class Podcast extends Music {
         this.episodeNumber = 1;
         this.channelName = "Tidak Diketahui";
         this.description = "";
-
-        // Set genre default untuk podcast (override dari Music)
-        setGenre("Podcast");
+        this.genre = "Podcast";
     }
 
     /**
@@ -73,11 +81,45 @@ public class Podcast extends Music {
      * @param episodeNumber nomor episode
      */
     public Podcast(File file, String host, String channelName, int episodeNumber) {
-        // Memanggil konstruktor Podcast(File) yang sudah memanggil super(file)
         this(file);
         setHost(host);
         setChannelName(channelName);
         setEpisodeNumber(episodeNumber);
+    }
+
+    // ── Implementasi Abstract Method dari AudioMedia ──
+    // Method-method berikut WAJIB diimplementasikan karena AudioMedia
+    // mendefinisikannya sebagai abstract.
+
+    /**
+     * [IMPLEMENTASI ABSTRACT] Mengembalikan jenis media.
+     * Podcast mengembalikan "Podcast" sebagai identifikasi tipe.
+     *
+     * <p>
+     * <b>Implementasi dari:</b> {@link AudioMedia#getMediaType()}
+     * </p>
+     *
+     * @return string "Podcast"
+     */
+    @Override
+    public String getMediaType() {
+        return "Podcast";
+    }
+
+    /**
+     * [IMPLEMENTASI ABSTRACT] Mengembalikan deskripsi singkat podcast.
+     * Format: "Podcast 'Judul' Ep. X oleh Host di Channel"
+     *
+     * <p>
+     * <b>Implementasi dari:</b> {@link AudioMedia#getSummary()}
+     * </p>
+     *
+     * @return string deskripsi singkat
+     */
+    @Override
+    public String getSummary() {
+        return String.format("Podcast '%s' Ep. %d oleh %s di %s",
+                title, episodeNumber, host, channelName);
     }
 
     // ── Getter (Akses Terkontrol) ──
@@ -119,8 +161,16 @@ public class Podcast extends Music {
     }
 
     /**
+     * Mengambil genre podcast.
+     *
+     * @return genre podcast
+     */
+    public String getGenre() {
+        return genre;
+    }
+
+    /**
      * Mengambil informasi lengkap podcast dalam format teks.
-     * Method ini khusus milik Podcast, tidak ada di parent Music.
      *
      * @return string informasi lengkap podcast
      */
@@ -185,16 +235,33 @@ public class Podcast extends Music {
         }
     }
 
+    /**
+     * Mengatur genre podcast.
+     * Validasi: jika null atau kosong, diisi "Podcast".
+     *
+     * @param genre genre baru
+     */
+    public void setGenre(String genre) {
+        if (genre != null && !genre.trim().isEmpty()) {
+            this.genre = genre.trim();
+        } else {
+            this.genre = "Podcast";
+        }
+    }
+
     // ── Overloading: setEpisodeInfo() ──
     // Overloading = method dengan nama sama tapi parameter berbeda.
     // Di Podcast, kita overload setEpisodeInfo() sesuai tema podcast:
     // - Versi 1: hanya nomor episode
     // - Versi 2: nomor episode + deskripsi
+    // - Versi 3: nomor episode + deskripsi + host
 
     /**
      * Mengatur informasi episode — hanya nomor episode.
      *
-     * <p><b>Overloading #1:</b> setEpisodeInfo(int) — 1 parameter</p>
+     * <p>
+     * <b>Overloading #1:</b> setEpisodeInfo(int) — 1 parameter
+     * </p>
      *
      * @param episodeNumber nomor episode baru
      */
@@ -205,7 +272,9 @@ public class Podcast extends Music {
     /**
      * Mengatur informasi episode — nomor episode dan deskripsi.
      *
-     * <p><b>Overloading #2:</b> setEpisodeInfo(int, String) — 2 parameter</p>
+     * <p>
+     * <b>Overloading #2:</b> setEpisodeInfo(int, String) — 2 parameter
+     * </p>
      *
      * @param episodeNumber nomor episode baru
      * @param description   deskripsi episode baru
@@ -218,7 +287,9 @@ public class Podcast extends Music {
     /**
      * Mengatur informasi episode — nomor, deskripsi, dan host.
      *
-     * <p><b>Overloading #3:</b> setEpisodeInfo(int, String, String) — 3 parameter</p>
+     * <p>
+     * <b>Overloading #3:</b> setEpisodeInfo(int, String, String) — 3 parameter
+     * </p>
      *
      * @param episodeNumber nomor episode baru
      * @param description   deskripsi episode baru
@@ -230,17 +301,17 @@ public class Podcast extends Music {
         setHost(host);
     }
 
-    // ── Overriding: displayInfo() dari Parent Music ──
-    // Overriding = subclass menimpa implementasi method yang sudah
-    // didefinisikan di superclass. Podcast menimpa displayInfo() dari Music
-    // untuk menambahkan informasi khusus podcast (host, episode, channel).
+    // ── Implementasi Abstract: displayInfo() (Overloading) ──
+    // Ketiga versi displayInfo() merupakan implementasi dari abstract method
+    // yang didefinisikan di AudioMedia. Sekaligus menunjukkan overloading.
 
     /**
-     * Menimpa (override) displayInfo() dari Music.
-     * Music menampilkan "Judul - Artis",
-     * Podcast menampilkan format khusus dengan host dan episode.
+     * [IMPLEMENTASI ABSTRACT] Menampilkan info ringkas podcast.
+     * Format: "[Podcast] Judul - Ep. X (Host: ...)"
      *
-     * <p><b>Override dari:</b> {@link Music#displayInfo()}</p>
+     * <p>
+     * <b>Implementasi dari:</b> {@link AudioMedia#displayInfo()}
+     * </p>
      *
      * @return info ringkas podcast
      */
@@ -251,10 +322,12 @@ public class Podcast extends Music {
     }
 
     /**
-     * Menimpa (override) displayInfo(boolean) dari Music.
-     * Versi Podcast menambahkan channel, deskripsi jika detailed=true.
+     * [IMPLEMENTASI ABSTRACT] Menampilkan info podcast dengan opsi detail.
+     * Jika detailed=true, menampilkan channel dan deskripsi.
      *
-     * <p><b>Override dari:</b> {@link Music#displayInfo(boolean)}</p>
+     * <p>
+     * <b>Implementasi dari:</b> {@link AudioMedia#displayInfo(boolean)}
+     * </p>
      *
      * @param detailed true untuk info lengkap podcast
      * @return info podcast sesuai level detail
@@ -271,10 +344,12 @@ public class Podcast extends Music {
     }
 
     /**
-     * Menimpa (override) displayInfo(String) dari Music.
+     * [IMPLEMENTASI ABSTRACT] Menampilkan info podcast dalam format tertentu.
      * Format output disesuaikan untuk konteks podcast.
      *
-     * <p><b>Override dari:</b> {@link Music#displayInfo(String)}</p>
+     * <p>
+     * <b>Implementasi dari:</b> {@link AudioMedia#displayInfo(String)}
+     * </p>
      *
      * @param format format output ("short", "full", atau "csv")
      * @return info podcast sesuai format
@@ -297,14 +372,15 @@ public class Podcast extends Music {
         }
     }
 
-    // ── Override: toString() dari Parent Music ──
+    // ── Override: toString() dari AudioMedia ──
 
     /**
-     * Menimpa (override) method toString() dari parent class Music.
-     * Music.toString() hanya mengembalikan judul,
-     * sedangkan Podcast.toString() menampilkan format khusus podcast.
+     * Menimpa (override) method toString() dari abstract class AudioMedia.
+     * Menampilkan format khusus podcast.
      *
-     * <p><b>Override dari:</b> {@link Music#toString()}</p>
+     * <p>
+     * <b>Override dari:</b> {@link AudioMedia#toString()}
+     * </p>
      *
      * @return representasi string dengan format "[Podcast] Judul - Ep. X"
      */

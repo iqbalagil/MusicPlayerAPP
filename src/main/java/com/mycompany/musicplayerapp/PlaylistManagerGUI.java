@@ -22,8 +22,8 @@ public class PlaylistManagerGUI extends JFrame {
 
     // ── Field Private (Enkapsulasi) ──
 
-    /** Daftar musik dalam playlist */
-    private ArrayList<Music> playlist;
+    /** Daftar media audio dalam playlist */
+    private ArrayList<AudioMedia> playlist;
 
     /** Referensi ke player utama untuk integrasi pemutaran */
     private MusicPlayer player;
@@ -49,7 +49,7 @@ public class PlaylistManagerGUI extends JFrame {
     private static final int WINDOW_HEIGHT = 450;
 
     /** Nama kolom tabel */
-    private static final String[] COLUMN_NAMES = {"No", "Judul", "Artis", "Genre", "Favorit"};
+    private static final String[] COLUMN_NAMES = {"No", "Judul", "Tipe", "Favorit"};
 
     // ── Konstruktor ──
 
@@ -60,7 +60,7 @@ public class PlaylistManagerGUI extends JFrame {
      * @param playlist daftar musik yang sudah diunggah
      * @param player   referensi MusicPlayer untuk pemutaran
      */
-    public PlaylistManagerGUI(ArrayList<Music> playlist, MusicPlayer player) {
+    public PlaylistManagerGUI(ArrayList<AudioMedia> playlist, MusicPlayer player) {
         this.playlist = new ArrayList<>(playlist);
         this.player = player;
 
@@ -129,10 +129,9 @@ public class PlaylistManagerGUI extends JFrame {
 
         // Atur lebar kolom proporsional
         playlistTable.getColumnModel().getColumn(0).setPreferredWidth(40);
-        playlistTable.getColumnModel().getColumn(1).setPreferredWidth(180);
-        playlistTable.getColumnModel().getColumn(2).setPreferredWidth(120);
-        playlistTable.getColumnModel().getColumn(3).setPreferredWidth(100);
-        playlistTable.getColumnModel().getColumn(4).setPreferredWidth(60);
+        playlistTable.getColumnModel().getColumn(1).setPreferredWidth(200);
+        playlistTable.getColumnModel().getColumn(2).setPreferredWidth(100);
+        playlistTable.getColumnModel().getColumn(3).setPreferredWidth(60);
 
         JScrollPane scrollPane = new JScrollPane(playlistTable);
         scrollPane.setBorder(BorderFactory.createEmptyBorder(5, 10, 5, 10));
@@ -260,12 +259,11 @@ public class PlaylistManagerGUI extends JFrame {
     private void refreshTable() {
         tableModel.setRowCount(0);
         for (int i = 0; i < playlist.size(); i++) {
-            Music m = playlist.get(i);
+            AudioMedia m = playlist.get(i);
             tableModel.addRow(new Object[]{
                 i + 1,
                 m.getTitle(),
-                m.getArtist(),
-                m.getGenre(),
+                m.getMediaType(),
                 m.isFavorite() ? "⭐" : "-"
             });
         }
@@ -282,16 +280,14 @@ public class PlaylistManagerGUI extends JFrame {
         String lowerKeyword = keyword.toLowerCase();
         int num = 1;
 
-        for (Music m : playlist) {
-            // Cocokkan dengan judul, artis, atau genre
+        for (AudioMedia m : playlist) {
+            // Cocokkan dengan judul atau tipe media
             if (m.getTitle().toLowerCase().contains(lowerKeyword)
-                    || m.getArtist().toLowerCase().contains(lowerKeyword)
-                    || m.getGenre().toLowerCase().contains(lowerKeyword)) {
+                    || m.getMediaType().toLowerCase().contains(lowerKeyword)) {
                 tableModel.addRow(new Object[]{
                     num++,
                     m.getTitle(),
-                    m.getArtist(),
-                    m.getGenre(),
+                    m.getMediaType(),
                     m.isFavorite() ? "⭐" : "-"
                 });
             }
@@ -308,7 +304,7 @@ public class PlaylistManagerGUI extends JFrame {
             showWarning("Pilih lagu terlebih dahulu!");
             return;
         }
-        Music music = findMusicByTitle((String) tableModel.getValueAt(selectedRow, 1));
+        AudioMedia music = findMediaByTitle((String) tableModel.getValueAt(selectedRow, 1));
         if (music != null) {
             player.load(music);
             player.play();
@@ -326,7 +322,7 @@ public class PlaylistManagerGUI extends JFrame {
             showWarning("Pilih lagu terlebih dahulu!");
             return;
         }
-        Music music = findMusicByTitle((String) tableModel.getValueAt(selectedRow, 1));
+        AudioMedia music = findMediaByTitle((String) tableModel.getValueAt(selectedRow, 1));
         if (music != null) {
             music.setFavorite(!music.isFavorite());
             refreshTable();
@@ -343,7 +339,7 @@ public class PlaylistManagerGUI extends JFrame {
             showWarning("Pilih lagu terlebih dahulu!");
             return;
         }
-        Music music = findMusicByTitle((String) tableModel.getValueAt(selectedRow, 1));
+        AudioMedia music = findMediaByTitle((String) tableModel.getValueAt(selectedRow, 1));
         if (music != null) {
             int confirm = JOptionPane.showConfirmDialog(this,
                     "Hapus \"" + music.getTitle() + "\" dari playlist?",
@@ -364,40 +360,38 @@ public class PlaylistManagerGUI extends JFrame {
             showWarning("Pilih lagu terlebih dahulu!");
             return;
         }
-        Music music = findMusicByTitle((String) tableModel.getValueAt(selectedRow, 1));
-        if (music == null) {
+        AudioMedia media = findMediaByTitle((String) tableModel.getValueAt(selectedRow, 1));
+        if (media == null) {
             return;
         }
 
-        // Panel form input
-        JPanel editPanel = new JPanel(new GridLayout(2, 2, 5, 5));
-        JTextField artistField = new JTextField(music.getArtist());
-        JTextField genreField = new JTextField(music.getGenre());
+        // Panel form input — tampilkan info sesuai tipe media
+        JPanel editPanel = new JPanel(new GridLayout(3, 2, 5, 5));
+        JTextField titleField = new JTextField(media.getTitle());
+        titleField.setEditable(false); // Judul tidak bisa diedit
+        JLabel typeLabel = new JLabel(media.getMediaType());
+        JLabel summaryLabel = new JLabel(media.getSummary());
 
-        editPanel.add(new JLabel("Artis:"));
-        editPanel.add(artistField);
-        editPanel.add(new JLabel("Genre:"));
-        editPanel.add(genreField);
+        editPanel.add(new JLabel("Judul:"));
+        editPanel.add(titleField);
+        editPanel.add(new JLabel("Tipe:"));
+        editPanel.add(typeLabel);
+        editPanel.add(new JLabel("Ringkasan:"));
+        editPanel.add(summaryLabel);
 
-        int result = JOptionPane.showConfirmDialog(this, editPanel,
-                "Edit Info: " + music.getTitle(),
-                JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE);
-
-        if (result == JOptionPane.OK_OPTION) {
-            music.setArtist(artistField.getText());
-            music.setGenre(genreField.getText());
-            refreshTable();
-        }
+        JOptionPane.showMessageDialog(this, editPanel,
+                "Info: " + media.getTitle(),
+                JOptionPane.INFORMATION_MESSAGE);
     }
 
     /**
-     * Mencari objek Music berdasarkan judul.
+     * Mencari objek AudioMedia berdasarkan judul.
      *
-     * @param title judul lagu yang dicari
-     * @return objek Music atau null jika tidak ditemukan
+     * @param title judul media yang dicari
+     * @return objek AudioMedia atau null jika tidak ditemukan
      */
-    private Music findMusicByTitle(String title) {
-        for (Music m : playlist) {
+    private AudioMedia findMediaByTitle(String title) {
+        for (AudioMedia m : playlist) {
             if (m.getTitle().equals(title)) {
                 return m;
             }
@@ -436,7 +430,7 @@ public class PlaylistManagerGUI extends JFrame {
      */
     private void updateStatusLabel() {
         long favCount = 0;
-        for (Music m : playlist) {
+        for (AudioMedia m : playlist) {
             if (m.isFavorite()) {
                 favCount++;
             }
@@ -451,7 +445,7 @@ public class PlaylistManagerGUI extends JFrame {
      *
      * @return salinan ArrayList playlist
      */
-    public ArrayList<Music> getPlaylist() {
+    public ArrayList<AudioMedia> getPlaylist() {
         return new ArrayList<>(playlist);
     }
 
